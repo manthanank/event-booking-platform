@@ -48,3 +48,4 @@ EventPulse is a Next.js 15 application designed for discovering global engineeri
    ```
 
 5. Visit [http://localhost:3000](http://localhost:3000).
+
