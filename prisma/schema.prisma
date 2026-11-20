@@ -1,0 +1,72 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REFUNDED
+}
+
+enum TicketTierType {
+  EARLY_BIRD
+  GENERAL_ADMISSION
+  VIP_ALL_ACCESS
+  WORKSHOP_ADDON
+}
+
+model Event {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  description String
+  category    String        // AI Summit, Cloud Expo, Developer Hackathon
+  city        String
+  venue       String
+  startDate   DateTime
+  endDate     DateTime
+  bannerUrl   String?
+  tiers       TicketTier[]
+  bookings    Booking[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model TicketTier {
+  id          String         @id @default(uuid())
+  eventId     String
+  event       Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name        String
+  tierType    TicketTierType @default(GENERAL_ADMISSION)
+  priceInCents Int
+  capacity    Int
+  soldCount   Int            @default(0)
+  perks       String[]
+  bookings    Booking[]
+  createdAt   DateTime       @default(now())
+}
+
+model Booking {
+  id              String        @id @default(uuid())
+  eventId         String
+  event           Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tierId          String
+  tier            TicketTier    @relation(fields: [tierId], references: [id])
+  customerEmail   String
+  customerName    String
+  quantity        Int           @default(1)
+  totalPriceCents Int
+  stripeSessionId String?       @unique
+  status          BookingStatus @default(CONFIRMED)
+  qrPassCode      String        @unique // e.g. EVT-VIP-98421
+  isScanned       Boolean       @default(false)
+  scannedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}

@@ -1,0 +1,15 @@
+# EventVibe Enterprise Ticket Booking Architecture Rules
+
+1. Next.js 15 App Router:
+   - Use Client Components ('use client') for interactive ticket tier selection, seat counters, QR code pass generators, gate check-in scanner simulator, and checkout modals.
+   - Use Server Components where appropriate for metadata and layouts.
+2. Relational Schema & Transactions:
+   - Database model in `prisma/schema.prisma` linking `Event`, `TicketTier`, `Booking`, `Attendee`, and `QRCodePass`.
+   - Idempotent booking creation to prevent duplicate charges or overbooking.
+3. Payment & Check-in Workflow:
+   - Stripe Checkout session creation simulation with currency formatting.
+   - Deterministic QR Code validation with timestamp, attendee UUID, and security token.
+4. UI & Responsiveness:
+   - Modern dark SaaS theme with slate-950, violet, amber, and emerald highlights.
+   - Framer motion for animated ticket cards, receipt drawers, and gate scanner laser animation.
+   - Recharts for ticket sales velocity and tier sellout curves.
