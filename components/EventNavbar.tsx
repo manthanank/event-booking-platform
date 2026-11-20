@@ -151,3 +151,4 @@ export function EventNavbar() {
 }
 
 export default EventNavbar;
+

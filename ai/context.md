@@ -21,3 +21,4 @@ EventVibe is a full-stack event discovery, transactional ticket booking, and org
 - `/analytics`: Ticket sales velocity, revenue curves, and tier sellout telemetry.
 - `/settings`: Organizer Stripe Connect status, Prisma schema explorer, and attendee CSV export.
 - `/api/checkout`: Stripe checkout session initiation route.
+

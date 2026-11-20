@@ -164,3 +164,4 @@ export const INITIAL_BOOKINGS: BookingTicket[] = [
     bookedAt: "May 10, 2026",
   },
 ];
+

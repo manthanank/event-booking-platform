@@ -42,3 +42,4 @@ export interface BookingTicket {
   isScanned: boolean;
   bookedAt: string;
 }
+

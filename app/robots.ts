@@ -9,3 +9,4 @@ export default function robots(): MetadataRoute.Robots {
     sitemap: "https://event-booking-platform-manthan.vercel.app/sitemap.xml",
   };
 }
+
