@@ -20,6 +20,17 @@ export default function EventsCatalogPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    fetch("/api/events")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.events && Array.isArray(data.events)) {
+          setEvents(data.events);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const categories = ["All", "Full-Stack Dev", "AI & ML Summit", "Cloud & DevOps"];
 
   const filteredEvents = events.filter((e) => {
