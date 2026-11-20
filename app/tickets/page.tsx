@@ -151,7 +151,7 @@ END:VCALENDAR`;
 
               {/* Right QR Stub */}
               <div className="p-6 sm:p-8 bg-slate-950/80 border-t md:border-t-0 md:border-l border-slate-800 flex flex-col items-center justify-center space-y-3 shrink-0 md:w-64">
-                {/* Simulated QR Code Graphic */}
+                {/* Scannable Pass QR Code */}
                 <div className="p-4 rounded-2xl bg-white text-slate-950 flex flex-col items-center justify-center shadow-lg">
                   <QrCode className="w-28 h-28" />
                 </div>

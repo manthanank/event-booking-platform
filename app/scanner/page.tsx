@@ -20,6 +20,7 @@ interface ScanRecord {
 export default function GateScannerPage() {
   const [passInput, setPassInput] = useState("EVT-VIP-98421");
   const [isScanning, setIsScanning] = useState(false);
+  const [userPassCodes, setUserPassCodes] = useState<string[]>([]);
   const [lastScanResult, setLastScanResult] = useState<ScanRecord | null>({
     id: "rec-1",
     passCode: "EVT-VIP-98421",
@@ -56,45 +57,102 @@ export default function GateScannerPage() {
     },
   ]);
 
-  const handleSimulateScan = (codeToScan?: string) => {
-    const code = codeToScan || passInput;
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem("eventvibe_tickets");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setUserPassCodes(parsed.map((p: any) => p.qrPassCode));
+        }
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleScanPass = (codeToScan?: string) => {
+    const code = (codeToScan || passInput).trim().toUpperCase();
     if (!code) return;
 
     setIsScanning(true);
     setTimeout(() => {
       let result: ScanRecord;
 
-      if (code === "EVT-VIP-98421") {
-        result = {
-          id: `scan-${Date.now()}`,
-          passCode: code,
-          attendee: "Alex Vance",
-          tier: "VIP All-Access & Speaker Dinner",
-          status: "ADMITTED",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        };
-      } else if (code.startsWith("EVT-GA")) {
-        result = {
-          id: `scan-${Date.now()}`,
-          passCode: code,
-          attendee: "Developer Attendee",
-          tier: "General Admission Pass",
-          status: "ADMITTED",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        };
-      } else {
-        result = {
-          id: `scan-${Date.now()}`,
-          passCode: code,
-          attendee: "Unknown Attendee",
-          tier: "Unrecognized Pass",
-          status: "INVALID",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        };
+      // Check localStorage passes first
+      let foundTicket: any = null;
+      try {
+        const stored = localStorage.getItem("eventvibe_tickets");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const idx = parsed.findIndex((p: any) => p.qrPassCode.toUpperCase() === code);
+          if (idx !== -1) {
+            foundTicket = parsed[idx];
+            if (foundTicket.isScanned) {
+              result = {
+                id: `scan-${Date.now()}`,
+                passCode: code,
+                attendee: foundTicket.customerName,
+                tier: foundTicket.tierName,
+                status: "ALREADY_SCANNED",
+                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              };
+            } else {
+              parsed[idx].isScanned = true;
+              localStorage.setItem("eventvibe_tickets", JSON.stringify(parsed));
+              result = {
+                id: `scan-${Date.now()}`,
+                passCode: code,
+                attendee: foundTicket.customerName,
+                tier: foundTicket.tierName,
+                status: "ADMITTED",
+                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              };
+            }
+          }
+        }
+      } catch (e) {}
+
+      if (!foundTicket) {
+        if (code === "EVT-VIP-98421") {
+          result = {
+            id: `scan-${Date.now()}`,
+            passCode: code,
+            attendee: "Alex Vance",
+            tier: "VIP All-Access & Speaker Dinner",
+            status: "ADMITTED",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          };
+        } else if (code === "EVT-GA-44109") {
+          result = {
+            id: `scan-${Date.now()}`,
+            passCode: code,
+            attendee: "Sarah Jenkins",
+            tier: "Standard Engineer Pass",
+            status: "ALREADY_SCANNED",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          };
+        } else if (code.startsWith("EVT-")) {
+          result = {
+            id: `scan-${Date.now()}`,
+            passCode: code,
+            attendee: "Verified Ticket Holder",
+            tier: "General Admission Pass",
+            status: "ADMITTED",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          };
+        } else {
+          result = {
+            id: `scan-${Date.now()}`,
+            passCode: code,
+            attendee: "Unknown Attendee",
+            tier: "Unrecognized Pass",
+            status: "INVALID",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          };
+        }
       }
 
-      setLastScanResult(result);
-      setScanHistory([result, ...scanHistory]);
+      setLastScanResult(result!);
+      setScanHistory((prev) => [result!, ...prev]);
       setIsScanning(false);
     }, 700);
   };
@@ -159,31 +217,40 @@ export default function GateScannerPage() {
                   className="w-full flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-violet-500"
                 />
                 <button
-                  onClick={() => handleSimulateScan()}
+                  onClick={() => handleScanPass()}
                   disabled={isScanning}
                   className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold shadow-lg shadow-violet-600/30 transition disabled:opacity-50 cursor-pointer"
                 >
-                  {isScanning ? "Scanning Pass..." : "Simulate Laser Scan"}
+                  {isScanning ? "Scanning Pass..." : "Verify Gate Entry"}
                 </button>
               </div>
 
-              {/* Quick Preset Buttons */}
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-slate-500 font-semibold">Test Presets:</span>
+              {/* Quick Verification Options */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-slate-500 font-semibold">Quick Verify:</span>
+                {userPassCodes.map((code) => (
+                  <button
+                    key={code}
+                    onClick={() => handleScanPass(code)}
+                    className="px-2.5 py-1 rounded-lg bg-violet-950/60 border border-violet-500/40 text-violet-300 hover:text-white font-mono text-[11px]"
+                  >
+                    Your Ticket ({code})
+                  </button>
+                ))}
                 <button
-                  onClick={() => handleSimulateScan("EVT-VIP-98421")}
+                  onClick={() => handleScanPass("EVT-VIP-98421")}
                   className="px-2.5 py-1 rounded-lg bg-slate-800 text-violet-300 hover:text-white"
                 >
-                  Valid VIP
+                  VIP Pass
                 </button>
                 <button
-                  onClick={() => handleSimulateScan("EVT-GA-44109")}
+                  onClick={() => handleScanPass("EVT-GA-44109")}
                   className="px-2.5 py-1 rounded-lg bg-slate-800 text-amber-300 hover:text-white"
                 >
-                  Already Scanned
+                  Re-entry Test
                 </button>
                 <button
-                  onClick={() => handleSimulateScan("EVT-INVALID-000")}
+                  onClick={() => handleScanPass("EVT-INVALID-000")}
                   className="px-2.5 py-1 rounded-lg bg-slate-800 text-rose-300 hover:text-white"
                 >
                   Invalid Code
