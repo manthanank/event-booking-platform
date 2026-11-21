@@ -37,20 +37,24 @@ export async function GET(request: Request) {
           id: e.id,
           title: e.title,
           slug: e.slug,
-          category: e.category,
+          category: (e.category === "Cloud Expo" ? "Cloud & DevOps" : "AI & ML Summit") as EventItem["category"],
           city: e.city,
           venue: e.venue,
           date: e.startDate.toISOString().split("T")[0],
-          priceRange: e.tiers.length > 0
-            ? `$${Math.min(...e.tiers.map((t) => t.priceInCents / 100))} - $${Math.max(...e.tiers.map((t) => t.priceInCents / 100))}`
-            : "$99 - $499",
+          time: "09:00 AM - 05:00 PM",
+          bannerGradient: "from-blue-600 to-indigo-900",
+          tiers: e.tiers.map((t) => ({
+            id: t.id,
+            name: t.name,
+            tierType: t.tierType as any,
+            price: t.priceInCents / 100,
+            capacity: t.capacity,
+            soldCount: t.soldCount,
+            perks: t.perks,
+          })),
+          speakersCount: 14,
           description: e.description,
-          image: e.bannerUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80",
           featured: true,
-          tags: ["Keynote", "Summit", "Networking"],
-          capacity: e.tiers.reduce((acc, t) => acc + t.capacity, 0) || 500,
-          registeredCount: e.tiers.reduce((acc, t) => acc + t.soldCount, 0) || 120,
-          status: "Open" as const,
         }));
       }
     } catch (e) {

@@ -51,7 +51,7 @@ describe("Event Booking Platform API Routes", () => {
       body: JSON.stringify(bookingPayload),
     });
 
-    const res = await postCheckout(req);
+    const res = await postCheckout(req as any);
     expect(res.status).toBe(200);
 
     const data = await res.json();
