@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { EventItem } from "@/lib/types";
 import { INITIAL_EVENTS } from "@/lib/mock-data";
+import { prisma, isDatabaseConfigured } from "@/lib/prisma";
 
 function generateUpcomingDynamicEvents(): EventItem[] {
   const now = new Date();
@@ -23,7 +24,41 @@ export async function GET(request: Request) {
   const category = searchParams.get("category");
   const query = searchParams.get("q")?.toLowerCase();
 
-  let filtered = [...serverEvents];
+  let events = [...serverEvents];
+
+  if (isDatabaseConfigured()) {
+    try {
+      const dbEvents = await prisma.event.findMany({
+        include: { tiers: true },
+        orderBy: { startDate: "asc" },
+      });
+      if (dbEvents && dbEvents.length > 0) {
+        events = dbEvents.map((e) => ({
+          id: e.id,
+          title: e.title,
+          slug: e.slug,
+          category: e.category,
+          city: e.city,
+          venue: e.venue,
+          date: e.startDate.toISOString().split("T")[0],
+          priceRange: e.tiers.length > 0
+            ? `$${Math.min(...e.tiers.map((t) => t.priceInCents / 100))} - $${Math.max(...e.tiers.map((t) => t.priceInCents / 100))}`
+            : "$99 - $499",
+          description: e.description,
+          image: e.bannerUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80",
+          featured: true,
+          tags: ["Keynote", "Summit", "Networking"],
+          capacity: e.tiers.reduce((acc, t) => acc + t.capacity, 0) || 500,
+          registeredCount: e.tiers.reduce((acc, t) => acc + t.soldCount, 0) || 120,
+          status: "Open" as const,
+        }));
+      }
+    } catch (e) {
+      console.warn("[Events API] Database query error, using in-memory:", (e as Error).message);
+    }
+  }
+
+  let filtered = [...events];
 
   if (category && category !== "All") {
     filtered = filtered.filter((e) => e.category.toLowerCase() === category.toLowerCase());
